@@ -1,0 +1,9 @@
+*.pickle
+__pycache__/
+*.pyc
+.env
+.venv
+env/
+venv/
+.DS_Store
+sync_data_to_hf.py

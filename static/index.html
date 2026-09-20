@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEP Analytics - Tennessee Eastman Process Dashboard</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Apache ECharts -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <!-- Main Wrapper -->
+  <div class="app-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <div class="logo-icon"><i data-lucide="activity"></i></div>
+          <div class="logo-text">
+            <h2>TEP Analytics</h2>
+            <span>Tennessee Eastman</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-tab="overview">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Visão Geral</span>
+        </button>
+        <button class="nav-item" data-tab="timeseries">
+          <i data-lucide="line-chart"></i>
+          <span>Séries Temporais</span>
+        </button>
+        <button class="nav-item" data-tab="pca">
+          <i data-lucide="scatter-chart"></i>
+          <span>Projeção PCA 2D</span>
+        </button>
+        <button class="nav-item" data-tab="correlation">
+          <i data-lucide="grid"></i>
+          <span>Correlações</span>
+        </button>
+        <button class="nav-item" data-tab="simulator">
+          <i data-lucide="play-circle"></i>
+          <span>Simulador Ao Vivo</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="system-status">
+          <div class="status-indicator online"></div>
+          <div class="status-info">
+            <span class="status-title">Servidor Conectado</span>
+            <span class="status-detail" id="server-status-detail">FastAPI Online</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Top Bar -->
+      <header class="top-bar">
+        <div class="mode-selector-container">
+          <label for="mode-select"><i data-lucide="layers"></i> Modo Operacional:</label>
+          <div class="select-wrapper">
+            <select id="mode-select">
+              <option value="1">Modo 1 (Nominal / Base)</option>
+              <option value="2">Modo 2</option>
+              <option value="3">Modo 3</option>
+              <option value="4">Modo 4</option>
+              <option value="5">Modo 5</option>
+              <option value="6">Modo 6</option>
+            </select>
+          </div>
+          <span class="badge" id="mode-file-badge">TEPDataset_Mode1.pickle</span>
+        </div>
+
+        <div class="top-actions">
+          <div class="dataset-stats-chip">
+            <i data-lucide="database"></i>
+            <span id="header-sample-count">2.900 Amostras</span>
+          </div>
+          <button class="btn btn-icon" id="btn-refresh" title="Recarregar Dados">
+            <i data-lucide="refresh-cw"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="content-scrollable">
+        
+        <!-- ================= TAB: VISÃO GERAL ================= -->
+        <section class="tab-pane active" id="pane-overview">
+          <!-- KPI Cards -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-icon blue"><i data-lucide="database"></i></div>
+              <div class="kpi-content">
+                <span class="kpi-label">Total de Séries Temporais</span>
+                <h3 class="kpi-value" id="kpi-total-samples">2.900</h3>
+                <span class="kpi-sub">Amostras gravadas</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-icon purple"><i data-lucide="clock"></i></div>
+              <div class="kpi-content">
+                <span class="kpi-label">Duração Temporal</span>
+                <h3 class="kpi-value" id="kpi-timesteps">600</h3>
+                <span class="kpi-sub">Passos por amostra</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-icon emerald"><i data-lucide="gauge"></i></div>
+              <div class="kpi-content">
+                <span class="kpi-label">Variáveis Monitoradas</span>
+                <h3 class="kpi-value" id="kpi-variables">34</h3>
+                <span class="kpi-sub">22 Medições + 12 Válvulas</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-icon amber"><i data-lucide="alert-triangle"></i></div>
+              <div class="kpi-content">
+                <span class="kpi-label">Classes de Falhas</span>
+                <h3 class="kpi-value" id="kpi-classes">29</h3>
+                <span class="kpi-sub">0 (Normal) + 28 Falhas</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Grid Overview -->
+          <div class="grid-2-cols">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <i data-lucide="bar-chart-3"></i>
+                  <h3>Distribuição de Amostras por Tipo de Falha</h3>
+                </div>
+              </div>
+              <div class="card-body">
+                <div id="chart-fault-distribution" class="echart-box"></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <i data-lucide="pie-chart"></i>
+                  <h3>Divisão de Validação Cruzada (5-Fold CV)</h3>
+                </div>
+              </div>
+              <div class="card-body">
+                <div id="chart-fold-distribution" class="echart-box"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Variables Reference Table -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i data-lucide="list"></i>
+                <h3>Dicionário das 34 Variáveis do Tennessee Eastman Process</h3>
+              </div>
+              <div class="table-search">
+                <input type="text" id="var-search-input" placeholder="Buscar variável ou sensor...">
+              </div>
+            </div>
+            <div class="card-body table-responsive">
+              <table class="data-table" id="variables-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Tag</th>
+                    <th>Tipo</th>
+                    <th>Nome do Processo</th>
+                    <th>Unidade</th>
+                    <th>Descrição Funcional</th>
+                  </tr>
+                </thead>
+                <tbody id="variables-table-body">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB: SÉRIES TEMPORAIS ================= -->
+        <section class="tab-pane" id="pane-timeseries">
+          <div class="timeseries-controls card">
+            <div class="controls-row">
+              <div class="control-group">
+                <label><i data-lucide="filter"></i> Filtrar por Falha:</label>
+                <select id="ts-fault-filter" class="form-control">
+                  <option value="">Todas as Classes</option>
+                  <!-- Injected via JS -->
+                </select>
+              </div>
+
+              <div class="control-group">
+                <label><i data-lucide="hash"></i> Amostra Selecionada:</label>
+                <div class="sample-picker">
+                  <button class="btn btn-secondary btn-sm" id="btn-prev-sample"><i data-lucide="chevron-left"></i></button>
+                  <input type="number" id="ts-sample-index" min="0" max="2899" value="0" class="form-control form-control-sm">
+                  <button class="btn btn-secondary btn-sm" id="btn-next-sample"><i data-lucide="chevron-right"></i></button>
+                  <button class="btn btn-primary btn-sm" id="btn-load-sample">Carregar</button>
+                </div>
+              </div>
+
+              <div class="control-group current-sample-info" id="current-sample-info">
+                <span class="info-tag" id="ts-sample-tag">Amostra #0</span>
+                <span class="info-fault" id="ts-fault-tag">Operação Normal (Classe 0)</span>
+              </div>
+            </div>
+
+            <!-- Variable selector chips -->
+            <div class="variable-chips-container">
+              <div class="chips-header">
+                <span>Selecione as variáveis para plotar (máx. 8 simultâneas):</span>
+                <div class="chips-presets">
+                  <button class="chip-preset-btn" data-preset="reactor">Reator</button>
+                  <button class="chip-preset-btn" data-preset="separator">Separador</button>
+                  <button class="chip-preset-btn" data-preset="stripper">Stripper</button>
+                  <button class="chip-preset-btn" data-preset="valves">Principais Válvulas</button>
+                  <button class="chip-preset-btn" data-preset="all-feeds">Alimentações</button>
+                  <button class="chip-preset-btn" data-preset="reset">Limpar</button>
+                </div>
+              </div>
+              <div class="variable-chips" id="variable-chips-list">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Main Time Series Chart -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i data-lucide="activity"></i>
+                <h3>Comportamento Temporal dos Sensores (600 Passos de Tempo)</h3>
+              </div>
+              <div class="card-extra">
+                <span class="help-text"><i data-lucide="zoom-in"></i> Use o botão direito/scroll ou a barra inferior para zoom</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="chart-timeseries" class="echart-box-large"></div>
+            </div>
+          </div>
+
+          <!-- Comparison View: Normal vs Fault -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i data-lucide="git-compare"></i>
+                <h3>Comparativo Direto: Amostra Selecionada vs Operação Normal</h3>
+              </div>
+              <div class="compare-selector">
+                <label>Variável de Comparação:</label>
+                <select id="compare-var-select" class="form-control form-control-sm">
+                  <!-- Injected via JS -->
+                </select>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="chart-comparison" class="echart-box"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB: PCA & PROJEÇÃO 2D ================= -->
+        <section class="tab-pane" id="pane-pca">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i data-lucide="scatter-chart"></i>
+                <h3>Projeção Multivariada PCA 2D (Separação de Modos & Falhas)</h3>
+              </div>
+              <div class="pca-stats-chip">
+                <span>Variância Explicada: </span>
+                <strong id="pca-variance-text">PC1: --% | PC2: --%</strong>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="pca-container">
+                <div id="chart-pca" class="echart-box-large"></div>
+                <div class="pca-sidebar">
+                  <h4>Legenda de Falhas</h4>
+                  <div class="pca-legend-list" id="pca-legend-list">
+                    <!-- Injected via JS -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB: CORRELAÇÃO ================= -->
+        <section class="tab-pane" id="pane-correlation">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i data-lucide="grid"></i>
+                <h3>Matriz de Correlação Multivariada (34 x 34 Variáveis)</h3>
+              </div>
+              <div class="corr-filter">
+                <label>Condição de Operação:</label>
+                <select id="corr-label-select" class="form-control">
+                  <option value="0">Operação Normal (Classe 0)</option>
+                  <!-- Injected via JS -->
+                </select>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="chart-correlation" class="echart-box-large"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================= TAB: SIMULADOR AO VIVO ================= -->
+        <section class="tab-pane" id="pane-simulator">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">
+                <i data-lucide="play-circle"></i>
+                <h3>Simulador de Processo Industrial & Detecção em Tempo Real</h3>
+              </div>
+              <div class="sim-playback-controls">
+                <button class="btn btn-primary" id="sim-play-btn"><i data-lucide="play"></i> Iniciar Playback</button>
+                <button class="btn btn-secondary" id="sim-reset-btn"><i data-lucide="rotate-ccw"></i> Reiniciar</button>
+                <div class="sim-speed">
+                  <label>Velocidade:</label>
+                  <select id="sim-speed-select" class="form-control form-control-sm">
+                    <option value="50">1x (Rápido)</option>
+                    <option value="20" selected>2x (Muito Rápido)</option>
+                    <option value="5">5x (Turbo)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <!-- Gauges / Plant telemetry grid -->
+              <div class="telemetry-grid">
+                <div class="telemetry-gauge">
+                  <span class="telemetry-title">Pressão Reator (XMEAS 7)</span>
+                  <div class="telemetry-value-box">
+                    <span class="telemetry-value" id="gauge-reactor-p">--</span>
+                    <span class="telemetry-unit">kPa</span>
+                  </div>
+                  <div class="gauge-bar"><div class="gauge-fill" id="fill-reactor-p"></div></div>
+                </div>
+
+                <div class="telemetry-gauge">
+                  <span class="telemetry-title">Temp. Reator (XMEAS 9)</span>
+                  <div class="telemetry-value-box">
+                    <span class="telemetry-value" id="gauge-reactor-t">--</span>
+                    <span class="telemetry-unit">°C</span>
+                  </div>
+                  <div class="gauge-bar"><div class="gauge-fill" id="fill-reactor-t"></div></div>
+                </div>
+
+                <div class="telemetry-gauge">
+                  <span class="telemetry-title">Nível Separador (XMEAS 12)</span>
+                  <div class="telemetry-value-box">
+                    <span class="telemetry-value" id="gauge-sep-level">--</span>
+                    <span class="telemetry-unit">%</span>
+                  </div>
+                  <div class="gauge-bar"><div class="gauge-fill" id="fill-sep-level"></div></div>
+                </div>
+
+                <div class="telemetry-gauge">
+                  <span class="telemetry-title">Válvula Refrig. (XMV 10)</span>
+                  <div class="telemetry-value-box">
+                    <span class="telemetry-value" id="gauge-cool-vlv">--</span>
+                    <span class="telemetry-unit">%</span>
+                  </div>
+                  <div class="gauge-bar"><div class="gauge-fill" id="fill-cool-vlv"></div></div>
+                </div>
+              </div>
+
+              <!-- Live Progress Timeline -->
+              <div class="sim-timeline-container">
+                <div class="sim-time-display">
+                  <span>Passo de Tempo Atual:</span>
+                  <strong id="sim-current-step">0 / 600</strong>
+                </div>
+                <div class="sim-progress-bar">
+                  <div class="sim-progress-fill" id="sim-progress-fill" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- Live Streaming Chart -->
+              <div id="chart-sim-live" class="echart-box"></div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
