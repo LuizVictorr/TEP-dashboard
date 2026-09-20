@@ -1,3 +1,4 @@
+cloudflared.exe
 *.pickle
 __pycache__/
 *.pyc
@@ -6,4 +7,5 @@ __pycache__/
 env/
 venv/
 .DS_Store
+
 sync_data_to_hf.py
